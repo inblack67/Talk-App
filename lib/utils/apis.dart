@@ -7,4 +7,6 @@ class APIs {
   static const getRoomsAPI = '$serverURL/api/rooms';
   static String getMessagesOfRoomAPI(String roomId) =>
       '$serverURL/api/room/$roomId/messages';
+
+  static const websocketAPI = 'ws://localhost:4000/socket/websocket';
 }

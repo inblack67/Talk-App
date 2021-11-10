@@ -1,8 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:phoenix_socket/phoenix_socket.dart';
+import 'package:talk/entities/message.dart';
+import 'package:talk/utils/apis.dart';
 import 'package:talk/utils/chat_arguments.dart';
+import 'package:talk/utils/topics.dart';
 import 'package:talk/widgets/custom_button.dart';
 import 'package:talk/widgets/widget_dashboard.dart';
 import 'package:talk/widgets/widget_message.dart';
+import 'package:http/http.dart' as http;
 
 class Chat extends StatefulWidget {
   const Chat({Key? key}) : super(key: key);
@@ -14,10 +22,61 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
-  late String roomId;
-
+  String roomId = '1';
+  late PhoenixSocket _socket;
+  List<MMessage> _messages = [];
+  PhoenixChannel? _channel;
+  bool _websocketConnected = false;
   TextEditingController messageController = TextEditingController();
   ScrollController scrollController = ScrollController(keepScrollOffset: false);
+  bool _scrollToEnd = false;
+
+  Future<void> getMessages() async {
+    try {
+      print('getmessage roomid $roomId');
+      var res = await http.get(Uri.parse(APIs.getMessagesOfRoomAPI(roomId)));
+      var resBody = jsonDecode(res.body);
+      // print('inside chat ** $resBody');
+      if (resBody['success']) {
+        // print(resBody['data']);
+        setState(() {
+          _messages = (resBody['data'] as List)
+              .map((el) => MMessage.fromJSON(el))
+              .toList();
+          _scrollToEnd = true;
+        });
+      }
+      // print(resBody);
+    } catch (e) {
+      print('getMessages crashed **');
+      print(e);
+    }
+  }
+
+  void playChannels() async {
+    print('playing channels...');
+    _socket = PhoenixSocket(APIs.websocketAPI)..connect();
+    _socket.closeStream.listen((event) {
+      print('disconnected...');
+      _websocketConnected = false;
+    });
+    _socket.openStream.listen((event) {
+      setState(() {
+        print('connected...');
+        _websocketConnected = true;
+        print('roomId => ** $roomId');
+        _channel = _socket.addChannel(topic: 'room:$roomId');
+        _channel?.join();
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getMessages();
+    playChannels();
+  }
 
   handlePostMessage() async {
     String messageContent = messageController.text;
@@ -25,10 +84,23 @@ class _ChatState extends State<Chat> {
       return;
     }
     print('messageContent $messageContent');
+    _channel?.push(Topics.newMessage, {
+      "payload": {"content": messageContent}
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance?.addPostFrameCallback(((_) {
+      if (_scrollToEnd) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 300),
+        );
+      }
+    }));
+
     final args = ModalRoute.of(context)!.settings.arguments as ChatArguments?;
 
     if (args == null) {
@@ -38,8 +110,6 @@ class _ChatState extends State<Chat> {
     setState(() {
       roomId = args!.roomId!;
     });
-
-    final data = [];
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -59,27 +129,104 @@ class _ChatState extends State<Chat> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Expanded(
-                  child: ListView.builder(
-                controller: scrollController,
-                itemCount: data.length,
-                itemBuilder: (context, index) {
-                  var el = data[index];
-                  String messageContent = el['content'];
-                  String messageUsername = 'inblack67';
-                  bool me = messageUsername == el['user']['username'];
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: WMessage(
-                      username: messageUsername,
-                      content: messageContent,
-                      me: me,
-                    ),
-                  );
-                  // return ListTile(
-                  //   title: Text(messageContent),
-                  // );
-                },
-              )),
+                child: StreamBuilder(
+                  stream: _channel?.messages,
+                  initialData: Message(
+                    event: PhoenixChannelEvent.join,
+                    joinRef: '',
+                    payload: const {'times': 0},
+                    ref: '',
+                    topic: '',
+                  ),
+                  builder:
+                      (BuildContext context, AsyncSnapshot<Message?> snapshot) {
+                    print('data => ');
+                    print(snapshot.data);
+                    print(snapshot.data?.payload);
+                    if (snapshot.data?.payload?['data'] != null) {
+                      var message =
+                          MMessage.fromJSON(snapshot.data?.payload!['data']);
+                      _messages.add(message);
+                      SchedulerBinding.instance?.addPostFrameCallback((_) {
+                        scrollController.animateTo(
+                          scrollController.position.maxScrollExtent,
+                          curve: Curves.easeOut,
+                          duration: const Duration(milliseconds: 300),
+                        );
+                      });
+                    }
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        var el = _messages[index];
+                        String messageContent = el.content;
+                        String messageUsername = 'inblack67';
+                        bool me = messageUsername == 'me';
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: WMessage(
+                            username: messageUsername,
+                            content: messageContent,
+                            me: me,
+                          ),
+                        );
+                        // return ListTile(
+                        //   title: Text(messageContent),
+                        // );
+                      },
+                    );
+                  },
+                ),
+                // child: ListView.builder(
+                //   controller: scrollController,
+                //   itemCount: data.length,
+                //   itemBuilder: (context, index) {
+                //     var el = data[index];
+                //     String messageContent = el.content;
+                //     String messageUsername = 'inblack67';
+                //     bool me = messageUsername == 'me';
+                //     return Padding(
+                //       padding: const EdgeInsets.all(8.0),
+                //       child: WMessage(
+                //         username: messageUsername,
+                //         content: messageContent,
+                //         me: me,
+                //       ),
+                //     );
+                //     // return ListTile(
+                //     //   title: Text(messageContent),
+                //     // );
+                //   },
+                // ),
+              ),
+              // StreamBuilder(
+              //   stream: _channel?.messages,
+              //   initialData: Message(
+              //     event: PhoenixChannelEvent.join,
+              //     joinRef: '',
+              //     payload: const {'times': 0},
+              //     ref: '',
+              //     topic: '',
+              //   ),
+              //   builder:
+              //       (BuildContext context, AsyncSnapshot<Message?> snapshot) {
+              //     if (!snapshot.hasData) {
+              //       return Container();
+              //     }
+
+              //     print('data => ');
+              //     print(snapshot.data);
+              //     print(snapshot.data?.payload);
+              //     if (snapshot.data?.payload?['data'] != null) {
+              //       var message =
+              //           MMessage.fromJSON(snapshot.data?.payload!['data']);
+              //       _messages.add(message);
+              //       return Text(message.content);
+              //     }
+              //     return const Text('none yet');
+              //   },
+              // ),
               const SizedBox(
                 height: 10.0,
               ),
