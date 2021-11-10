@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:talk/utils/colors.dart';
 
 class CustomAlert extends StatelessWidget {
   final String title;
@@ -15,7 +16,7 @@ class CustomAlert extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.black,
+      backgroundColor: MyColors.primaryBG,
       title: Text(
         title,
         style: TextStyle(

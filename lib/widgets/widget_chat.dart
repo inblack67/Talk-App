@@ -6,7 +6,9 @@ import 'package:phoenix_socket/phoenix_socket.dart';
 import 'package:talk/entities/message.dart';
 import 'package:talk/utils/apis.dart';
 import 'package:talk/utils/chat_arguments.dart';
+import 'package:talk/utils/colors.dart';
 import 'package:talk/utils/topics.dart';
+import 'package:talk/widgets/custom_alert.dart';
 import 'package:talk/widgets/custom_button.dart';
 import 'package:talk/widgets/widget_dashboard.dart';
 import 'package:talk/widgets/widget_message.dart';
@@ -22,7 +24,7 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
-  String roomId = '1';
+  String roomId = '12';
   late PhoenixSocket _socket;
   List<MMessage> _messages = [];
   PhoenixChannel? _channel;
@@ -36,9 +38,7 @@ class _ChatState extends State<Chat> {
       print('getmessage roomid $roomId');
       var res = await http.get(Uri.parse(APIs.getMessagesOfRoomAPI(roomId)));
       var resBody = jsonDecode(res.body);
-      // print('inside chat ** $resBody');
       if (resBody['success']) {
-        // print(resBody['data']);
         setState(() {
           _messages = (resBody['data'] as List)
               .map((el) => MMessage.fromJSON(el))
@@ -46,7 +46,6 @@ class _ChatState extends State<Chat> {
           _scrollToEnd = true;
         });
       }
-      // print(resBody);
     } catch (e) {
       print('getMessages crashed **');
       print(e);
@@ -54,17 +53,20 @@ class _ChatState extends State<Chat> {
   }
 
   void playChannels() async {
-    print('playing channels...');
     _socket = PhoenixSocket(APIs.websocketAPI)..connect();
     _socket.closeStream.listen((event) {
-      print('disconnected...');
+      print('socket disconnected...');
       _websocketConnected = false;
+      showDialog(
+        context: context,
+        builder: (context) => const CustomAlert(
+            title: 'Offline!', message: 'You have gone off the grid!'),
+      );
     });
     _socket.openStream.listen((event) {
       setState(() {
-        print('connected...');
+        print('socket connected...');
         _websocketConnected = true;
-        print('roomId => ** $roomId');
         _channel = _socket.addChannel(topic: 'room:$roomId');
         _channel?.join();
       });
@@ -83,10 +85,10 @@ class _ChatState extends State<Chat> {
     if (messageContent.isEmpty) {
       return;
     }
-    print('messageContent $messageContent');
     _channel?.push(Topics.newMessage, {
       "payload": {"content": messageContent}
     });
+    messageController.clear();
   }
 
   @override
@@ -112,15 +114,15 @@ class _ChatState extends State<Chat> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: MyColors.primaryBG,
       appBar: AppBar(
-        title: Text('FElixir | Chat',
+        title: Text('Talk | Chat',
             style: TextStyle(
               color: Colors.red[900],
               fontWeight: FontWeight.bold,
               fontSize: 32.0,
             )),
-        backgroundColor: Colors.black,
+        backgroundColor: MyColors.primaryBG,
       ),
       body: SafeArea(
         child: Padding(
@@ -140,9 +142,6 @@ class _ChatState extends State<Chat> {
                   ),
                   builder:
                       (BuildContext context, AsyncSnapshot<Message?> snapshot) {
-                    print('data => ');
-                    print(snapshot.data);
-                    print(snapshot.data?.payload);
                     if (snapshot.data?.payload?['data'] != null) {
                       var message =
                           MMessage.fromJSON(snapshot.data?.payload!['data']);
@@ -171,62 +170,11 @@ class _ChatState extends State<Chat> {
                             me: me,
                           ),
                         );
-                        // return ListTile(
-                        //   title: Text(messageContent),
-                        // );
                       },
                     );
                   },
                 ),
-                // child: ListView.builder(
-                //   controller: scrollController,
-                //   itemCount: data.length,
-                //   itemBuilder: (context, index) {
-                //     var el = data[index];
-                //     String messageContent = el.content;
-                //     String messageUsername = 'inblack67';
-                //     bool me = messageUsername == 'me';
-                //     return Padding(
-                //       padding: const EdgeInsets.all(8.0),
-                //       child: WMessage(
-                //         username: messageUsername,
-                //         content: messageContent,
-                //         me: me,
-                //       ),
-                //     );
-                //     // return ListTile(
-                //     //   title: Text(messageContent),
-                //     // );
-                //   },
-                // ),
               ),
-              // StreamBuilder(
-              //   stream: _channel?.messages,
-              //   initialData: Message(
-              //     event: PhoenixChannelEvent.join,
-              //     joinRef: '',
-              //     payload: const {'times': 0},
-              //     ref: '',
-              //     topic: '',
-              //   ),
-              //   builder:
-              //       (BuildContext context, AsyncSnapshot<Message?> snapshot) {
-              //     if (!snapshot.hasData) {
-              //       return Container();
-              //     }
-
-              //     print('data => ');
-              //     print(snapshot.data);
-              //     print(snapshot.data?.payload);
-              //     if (snapshot.data?.payload?['data'] != null) {
-              //       var message =
-              //           MMessage.fromJSON(snapshot.data?.payload!['data']);
-              //       _messages.add(message);
-              //       return Text(message.content);
-              //     }
-              //     return const Text('none yet');
-              //   },
-              // ),
               const SizedBox(
                 height: 10.0,
               ),

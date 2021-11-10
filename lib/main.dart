@@ -13,10 +13,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'FElixir',
+      title: 'Talk',
       theme: ThemeData(
-        // Define the default brightness and colors.
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         backgroundColor: Colors.red[900],
         primaryColor: Colors.grey[850],
         fontFamily: 'Georgia',
@@ -38,6 +37,10 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+      ),
+      themeMode: ThemeMode.dark,
       home: const Dashboard(),
       routes: {
         Chat.id: (context) => const Chat(),
