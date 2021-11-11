@@ -55,7 +55,7 @@ class _DashboardState extends State<Dashboard> {
         : Scaffold(
             backgroundColor: MyColors.primaryBG,
             appBar: AppBar(
-              title: Text('Talk | Roomss',
+              title: Text('Talk | Rooms',
                   style: TextStyle(
                     color: Colors.red[900],
                     fontWeight: FontWeight.bold,
