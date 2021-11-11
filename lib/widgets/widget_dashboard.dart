@@ -33,7 +33,6 @@ class _DashboardState extends State<Dashboard> {
           _rooms = (resBody['data'] as List)
               .map((el) => MRoom.fromJSON(el))
               .toList();
-          ;
         });
       }
     } catch (e) {
@@ -56,7 +55,7 @@ class _DashboardState extends State<Dashboard> {
         : Scaffold(
             backgroundColor: MyColors.primaryBG,
             appBar: AppBar(
-              title: Text('Talk | Rooms',
+              title: Text('Talk | Roomss',
                   style: TextStyle(
                     color: Colors.red[900],
                     fontWeight: FontWeight.bold,
@@ -80,6 +79,5 @@ class _DashboardState extends State<Dashboard> {
               },
             ),
           );
-    ;
   }
 }

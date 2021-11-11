@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:phoenix_socket/phoenix_socket.dart';
 import 'package:talk/entities/message.dart';
 import 'package:talk/utils/apis.dart';
-import 'package:talk/utils/chat_arguments.dart';
 import 'package:talk/utils/colors.dart';
 import 'package:talk/utils/topics.dart';
 import 'package:talk/widgets/custom_button.dart';
@@ -14,7 +13,7 @@ import 'package:talk/widgets/widget_message.dart';
 import 'package:http/http.dart' as http;
 
 class Chat extends StatefulWidget {
-  String roomId;
+  final String roomId;
   Chat({Key? key, required this.roomId}) : super(key: key);
 
   static const id = 'CHAT';
@@ -47,7 +46,6 @@ class _ChatState extends State<Chat> {
         });
       }
     } catch (e) {
-      print('getMessages crashed **');
       print(e);
     }
   }

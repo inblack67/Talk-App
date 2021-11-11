@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:talk/widgets/widget_chat.dart';
 import 'package:talk/widgets/widget_dashboard.dart';
 
 void main() {
