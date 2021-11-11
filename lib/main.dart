@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       home: const Dashboard(),
       routes: {
-        Chat.id: (context) => const Chat(),
+        // Chat.id: (context) => const Chat(),
         Dashboard.id: (context) => const Dashboard(),
       },
     );

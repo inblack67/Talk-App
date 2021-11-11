@@ -8,14 +8,14 @@ import 'package:talk/utils/apis.dart';
 import 'package:talk/utils/chat_arguments.dart';
 import 'package:talk/utils/colors.dart';
 import 'package:talk/utils/topics.dart';
-import 'package:talk/widgets/custom_alert.dart';
 import 'package:talk/widgets/custom_button.dart';
 import 'package:talk/widgets/widget_dashboard.dart';
 import 'package:talk/widgets/widget_message.dart';
 import 'package:http/http.dart' as http;
 
 class Chat extends StatefulWidget {
-  const Chat({Key? key}) : super(key: key);
+  String roomId;
+  Chat({Key? key, required this.roomId}) : super(key: key);
 
   static const id = 'CHAT';
 
@@ -24,8 +24,8 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
-  String roomId = '12';
   late PhoenixSocket _socket;
+  late FocusNode _focusNode;
   List<MMessage> _messages = [];
   PhoenixChannel? _channel;
   bool _websocketConnected = false;
@@ -35,8 +35,8 @@ class _ChatState extends State<Chat> {
 
   Future<void> getMessages() async {
     try {
-      print('getmessage roomid $roomId');
-      var res = await http.get(Uri.parse(APIs.getMessagesOfRoomAPI(roomId)));
+      var res =
+          await http.get(Uri.parse(APIs.getMessagesOfRoomAPI(widget.roomId)));
       var resBody = jsonDecode(res.body);
       if (resBody['success']) {
         setState(() {
@@ -56,18 +56,20 @@ class _ChatState extends State<Chat> {
     _socket = PhoenixSocket(APIs.websocketAPI)..connect();
     _socket.closeStream.listen((event) {
       print('socket disconnected...');
-      _websocketConnected = false;
-      showDialog(
-        context: context,
-        builder: (context) => const CustomAlert(
-            title: 'Offline!', message: 'You have gone off the grid!'),
-      );
+      // setState(() {
+      //   _websocketConnected = false;
+      // });
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => const CustomAlert(
+      //       title: 'Offline!', message: 'You have gone off the grid!'),
+      // );
     });
     _socket.openStream.listen((event) {
       setState(() {
         print('socket connected...');
         _websocketConnected = true;
-        _channel = _socket.addChannel(topic: 'room:$roomId');
+        _channel = _socket.addChannel(topic: 'room:${widget.roomId}');
         _channel?.join();
       });
     });
@@ -76,6 +78,7 @@ class _ChatState extends State<Chat> {
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     getMessages();
     playChannels();
   }
@@ -89,6 +92,7 @@ class _ChatState extends State<Chat> {
       "payload": {"content": messageContent}
     });
     messageController.clear();
+    _focusNode.requestFocus();
   }
 
   @override
@@ -102,16 +106,6 @@ class _ChatState extends State<Chat> {
         );
       }
     }));
-
-    final args = ModalRoute.of(context)!.settings.arguments as ChatArguments?;
-
-    if (args == null) {
-      Navigator.of(context).pushNamed(Dashboard.id);
-    }
-
-    setState(() {
-      roomId = args!.roomId!;
-    });
 
     return Scaffold(
       backgroundColor: MyColors.primaryBG,
@@ -180,10 +174,13 @@ class _ChatState extends State<Chat> {
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Expanded(
                       child: TextField(
+                    autofocus: true,
                     controller: messageController,
+                    focusNode: _focusNode,
                     decoration:
                         const InputDecoration(hintText: 'Start typing...'),
                   )),

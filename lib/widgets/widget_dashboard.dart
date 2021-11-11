@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,8 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   late List<MRoom> _rooms = [];
+  bool _startChat = false;
+  String? _roomId;
 
   Future<void> getRooms() async {
     try {
@@ -46,32 +49,37 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MyColors.primaryBG,
-      appBar: AppBar(
-        title: Text('Talk | Rooms',
-            style: TextStyle(
-              color: Colors.red[900],
-              fontWeight: FontWeight.bold,
-              fontSize: 32.0,
-            )),
-        backgroundColor: MyColors.primaryBG,
-      ),
-      body: ListView.builder(
-        itemCount: _rooms.length,
-        itemBuilder: (context, index) {
-          var el = _rooms[index];
-          return ListTile(
-            title: Text(el.name.capitalize()),
-            onTap: () {
-              Navigator.of(context).pushNamed(
-                Chat.id,
-                arguments: ChatArguments(roomId: el.id.toString()),
-              );
-            },
+    return _startChat
+        ? Chat(
+            roomId: _roomId!,
+          )
+        : Scaffold(
+            backgroundColor: MyColors.primaryBG,
+            appBar: AppBar(
+              title: Text('Talk | Rooms',
+                  style: TextStyle(
+                    color: Colors.red[900],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 32.0,
+                  )),
+              backgroundColor: MyColors.primaryBG,
+            ),
+            body: ListView.builder(
+              itemCount: _rooms.length,
+              itemBuilder: (context, index) {
+                var el = _rooms[index];
+                return ListTile(
+                  title: Text(el.name.capitalize()),
+                  onTap: () {
+                    setState(() {
+                      _roomId = el.id.toString();
+                      _startChat = true;
+                    });
+                  },
+                );
+              },
+            ),
           );
-        },
-      ),
-    );
+    ;
   }
 }
