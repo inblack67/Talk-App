@@ -110,6 +110,13 @@ class _ChatState extends State<Chat> {
     return Scaffold(
       backgroundColor: MyColors.primaryBG,
       appBar: AppBar(
+        actions: <Widget>[
+          IconButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed(Dashboard.id);
+              },
+              icon: const Icon(Icons.close))
+        ],
         title: Text('Talk | Chat',
             style: TextStyle(
               color: Colors.red[900],
