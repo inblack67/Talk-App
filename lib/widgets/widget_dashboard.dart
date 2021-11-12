@@ -26,8 +26,10 @@ class _DashboardState extends State<Dashboard> {
 
   Future<void> getRooms() async {
     try {
+      print('getRooms ran ** ${APIs.getRoomsAPI}');
       var res = await http.get(Uri.parse(APIs.getRoomsAPI));
       var resBody = jsonDecode(res.body);
+      print(resBody);
       if (resBody['success']) {
         setState(() {
           _rooms = (resBody['data'] as List)
@@ -36,6 +38,7 @@ class _DashboardState extends State<Dashboard> {
         });
       }
     } catch (e) {
+      print('getRooms crashed **');
       print(e);
     }
   }

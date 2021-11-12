@@ -51,6 +51,7 @@ class _ChatState extends State<Chat> {
   }
 
   void playChannels() async {
+    print('websockted address ** => ${APIs.websocketAPI}');
     _socket = PhoenixSocket(APIs.websocketAPI)..connect();
     _socket.closeStream.listen((event) {
       print('socket disconnected...');
