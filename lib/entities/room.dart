@@ -14,7 +14,7 @@ class MRoom {
   factory MRoom.fromJSON(Map<String, dynamic> json) {
     return MRoom(
       id: json['id'],
-      description: json['description'],
+      description: json['desc'],
       insertedAt: json['inserted_at'],
       name: json['name'],
     );

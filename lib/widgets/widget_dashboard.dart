@@ -28,6 +28,7 @@ class _DashboardState extends State<Dashboard> {
     try {
       var res = await http.get(Uri.parse(APIs.getRoomsAPI));
       var resBody = jsonDecode(res.body);
+      print('resBody $resBody');
       if (resBody['success']) {
         setState(() {
           _rooms = (resBody['data'] as List)
